@@ -7,11 +7,16 @@
 
 import SwiftUI
 
-let columns: [GridItem] = [GridItem(.flexible()),
-                           GridItem(.flexible()),
-                           GridItem(.flexible())]
 
 struct ContentView: View {
+    
+    let columns: [GridItem] = [GridItem(.flexible()),
+                               GridItem(.flexible()),
+                               GridItem(.flexible())]
+    
+    @State private var moves: [Move?]  = Array(repeating: nil, count: 9)//Move will either be filled or nil based on if the person has made a move yet or not
+    @State private var isHumansTurn = true
+    
     var body: some View {
         GeometryReader { geometry in
             VStack {
@@ -20,17 +25,18 @@ struct ContentView: View {
                     ForEach(0..<9) {i in
                         ZStack{
                             Circle()
-                                .foregroundColor(.yellow).opacity(0.5)
+                                .foregroundColor(.blue).opacity(0.5)
                                 .frame(width: geometry.size.width/3 - 25,
                                        height: geometry.size.width/3 - 25)
                             
-                            Image(systemName: "xmark")
+                            Image(systemName: moves[i]? .indicator ?? "")
                                 .resizable()
                                 .foregroundColor(.white)
                                 .frame(width: 40, height: 40)
-                                
-                            
-                            
+                        }
+                        .onTapGesture {
+                            moves[i] = Move(player: isHumansTurn ? .human : .computer, boardIndex: i)
+                            isHumansTurn.toggle()
                         }
                     }
                     
@@ -41,6 +47,19 @@ struct ContentView: View {
         }
         
         
+    }
+}
+
+enum Player {
+    case human, computer
+}
+
+struct Move {
+    let player: Player
+    let boardIndex: Int
+    
+    var indicator: String {
+        return player == .human ? "xmark" : "circle" //If human place x, else place circle
     }
 }
 
