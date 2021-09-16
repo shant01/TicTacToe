@@ -15,10 +15,12 @@ struct ContentView: View {
                                GridItem(.flexible())]
     
     @State private var moves: [Move?]  = Array(repeating: nil, count: 9)//Move will either be filled or nil based on if the person has made a move yet or not
-    @State private var isHumansTurn = true
     
     var body: some View {
         GeometryReader { geometry in
+            Text("Tic Tac Toe")
+                .frame(width: geometry.size.width, height: 100, alignment: .center)
+                
             VStack {
                 Spacer()
                 LazyVGrid(columns: columns, spacing: 5) {
@@ -36,9 +38,15 @@ struct ContentView: View {
                         }
                         .onTapGesture {
                             if isSquareOccupied(in: moves, forIndex: i) {return} //Check to see if square is occupied and stopping if space is occupied
+                            moves[i] = Move(player: .human, boardIndex: i)
                             
-                            moves[i] = Move(player: isHumansTurn ? .human : .computer, boardIndex: i)
-                            isHumansTurn.toggle()
+                            //Check for win condition or draw
+                            
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                                let computerPosition = determineComputerPosition(in: moves)
+                                moves[computerPosition] = Move(player: .computer, boardIndex: computerPosition)
+
+                            }
                         }
                     }
                     
@@ -51,6 +59,15 @@ struct ContentView: View {
     
     func isSquareOccupied(in moves: [Move?], forIndex index: Int) -> Bool {
         return moves.contains(where: { $0?.boardIndex == index})
+    }
+    
+    // Easy Mode: Determining if a position on the board is empty and filling it by the computer
+    func determineComputerPosition(in moves: [Move?]) -> Int {
+        let movePosition = Int.random(in: 0..<9) //Selecting a random position on the board.
+        while isSquareOccupied(in: moves, forIndex: movePosition) {
+           return determineComputerPosition(in: moves) //Using recursion to call back function until an empty spot is found
+        }
+        return movePosition
     }
     
 }
