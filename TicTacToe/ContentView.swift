@@ -59,17 +59,17 @@ struct ContentView: View {
                                 let computerPosition = determineComputerPosition(in: moves)
                                 moves[computerPosition] = Move(player: .computer, boardIndex: computerPosition)
                                 isGameBoardDisabled = false
-
+                                
+                                if checkWinCondition(for: .computer, in: moves) {
+                                    alertItem = AlertContext.computerWin
+                                    return
+                                }
+                                if checkForDraw(in: moves) {
+                                    alertItem = AlertContext.draw
+                                    return
+                                }
                             }
-                            if checkWinCondition(for: .computer, in: moves) {
-                                alertItem = AlertContext.computerWin
-                                return
-                            }
-                            
-                            if checkForDraw(in: moves) {
-                                alertItem = AlertContext.draw
-                                return
-                            }
+                           
                         }
                     }
                     
@@ -93,12 +93,51 @@ struct ContentView: View {
     
     // Easy Mode: Determining if a position on the board is empty and filling it by the computer
     func determineComputerPosition(in moves: [Move?]) -> Int {
-    let movePosition = Int.random(in: 0..<9) //Selecting a random position on the board.
-    while isSquareOccupied(in: moves, forIndex: movePosition) {
-        return determineComputerPosition(in: moves) //Using recursion to call back function until an empty spot is found
+        
+        let winPatterns: Set<Set<Int>> = [[0,1,2],
+                                          [3,4,5],
+                                          [6,7,8],
+                                          [0,3,6],
+                                          [1,4,7],
+                                          [2,5,8],
+                                          [0,4,8],
+                                          [2,4,6]]
+        //If AI can win, then win
+        let computerMoves = moves.compactMap {  $0 }.filter {$0.player == .computer}
+        let computerPositions = Set(computerMoves.map {$0.boardIndex})
+        for pattern in winPatterns {
+            let winPositions = pattern.subtracting(computerPositions)
+            if winPositions.count == 1 {
+                let isAvailable = isSquareOccupied(in: moves, forIndex: computerPositions.first!)
+                if isAvailable {return winPositions.first!}
+                
+            }
+        }
+        
+        //If can't win, then block
+        let humanMoves = moves.compactMap {  $0 }.filter {$0.player == .human}
+        let humanPositions = Set(humanMoves.map {$0.boardIndex})
+        for pattern in winPatterns {
+            let winPositions = pattern.subtracting(humanPositions)
+            if winPositions.count == 1 {
+                let isAvailable = isSquareOccupied(in: moves, forIndex: humanPositions.first!)
+                if isAvailable {return winPositions.first!}
+            }
+        }
+        
+        //Take middle if available
+        let centerSquare = 4
+        if !isSquareOccupied(in: moves, forIndex: centerSquare) {
+            return centerSquare
+        }
+        
+        //If cant win take random square
+        var movePosition = Int.random(in: 0..<9) //Selecting a random position on the board.
+        while isSquareOccupied(in: moves, forIndex: movePosition) {
+            movePosition = Int.random(in: 0..<9)//Using recursion to call back function until an empty spot is found
+        }
+        return movePosition
     }
-    return movePosition
-}
     
     func checkWinCondition(for player: Player, in moves: [Move?]) -> Bool {
         let winPatterns: Set<Set<Int>> = [[0,1,2],
